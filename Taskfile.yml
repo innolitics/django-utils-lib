@@ -1,0 +1,59 @@
+### @file ###
+#
+# This is a "Taskfile", for use with the `task` (aka `go-task`) runner.
+# It supports cross-platform scripting, task dependency / fingerprinting, and more.
+# See: https://github.com/go-task/task
+#
+# Many tasks are automatically run together, via dependency arrays, so you don't
+# have to remember to manually do things like install dependencies, re-build, etc.
+#
+# Tips:
+# - Use `task TASK_NAME` to run a specific task
+# - Use `task --list-all` in the project root to list all tasks.
+# - For a given task:
+#     - Use `--summary` to show the description / help.
+#     - Use `--force` to force the task to re-run, even if computed deps haven't changed.
+#############
+version: '3'
+
+silent: true
+
+env:
+  PACKAGE_DIR: django_utils_lib
+
+tasks:
+  #============================================================#
+  #======================= Help ===============================#
+  #============================================================#
+  default: task --list-all
+  #============================================================#
+  #==================== Internal Use ==========================#
+  #============================================================#
+  _verify_python_venv: |
+    DETECTED_PYTHON_PATH=$(which python)
+    if [[ $DETECTED_PYTHON_PATH != *"/envs/"* && $DETECTED_PYTHON_PATH != $PWD/* ]]; then
+      echo "Python path (${DETECTED_PYTHON_PATH}) is not scoped to project; please make sure you have activated your virtual environment."
+      exit 1
+    fi
+  #============================================================#
+  #================= Setup / install ==========================#
+  #============================================================#
+  install:
+    deps: [_verify_python_venv]
+    sources:
+      - pyproject.toml
+    cmd: poetry install
+  #============================================================#
+  #================= Linting / Testing ========================#
+  #============================================================#
+  lint:
+    deps: [_verify_python_venv]
+    cmd: |
+      poetry run ruff check "$PACKAGE_DIR"
+      mypy "$PACKAGE_DIR"
+  test:
+    deps: [_verify_python_venv]
+    cmd: poetry run pytest -n 4
+  #============================================================#
+  #================= SECTION_HEADING ==========================#
+  #============================================================#

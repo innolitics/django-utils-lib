@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "django-utils-lib"
+version = "0.1.0"
+description = "A utility library for working with Django"
+authors = ["Innolitics"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.4"
+mypy = "^1.11.2"
+django-stubs = {extras = ["compatible-mypy"], version = "^5.0.4"}
+pytest = "^8.3.3"
+pytest-xdist = "^3.6.1"
+pytest-django = "^4.9.0"
+pytest-playwright = "^0.5.2"
+filelock = "^3.16.0"
+debugpy = "^1.8.5"
+
+[tool.pytest.ini_options]
+log_level = "INFO"
+log_cli_level = "INFO"
+log_cli = true
+testpaths = [
+    "django_utils_lib/tests"
+]
+pythonpath = ". django_utils_lib"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

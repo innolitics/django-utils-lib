@@ -1,0 +1,26 @@
+{
+    // This provides intellisense for this file, but can be removed when copying
+    // for your own settings
+    "$schema": "vscode://schemas/settings/folder",
+
+    "prettier.useTabs": false,
+    "prettier.tabWidth": 4,
+    "[json][jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "python.analysis.indexing": true,
+    "python.analysis.extraPaths": ["${workspaceFolder}/django_utils_lib"],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "[python][typescript][javascript][json][jsonc]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        }
+    }
+}
