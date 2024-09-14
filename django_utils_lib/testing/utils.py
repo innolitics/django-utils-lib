@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import re
-from typing import List, Tuple, TypedDict, cast
+from typing import List, Tuple, cast
 
 import pytest
+from typing_extensions import TypedDict
 
 PytestNodeID = str
 """
@@ -46,9 +49,7 @@ def validate_requirement_tagging(item: pytest.Item) -> RequirementValidationResu
     # Verify that it matches pattern (or is NA)
     for req in requirements:
         if not re.match(r"REQ-\d{3}-\d{3}", req) and req != "NA":
-            errors.append(
-                f"{test_name} requirement {req} does not match pattern REQ-###-###"
-            )
+            errors.append(f"{test_name} requirement {req} does not match pattern REQ-###-###")
         else:
             validated_requirements.append(req)
 

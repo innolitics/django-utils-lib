@@ -30,6 +30,9 @@ tasks:
   #==================== Internal Use ==========================#
   #============================================================#
   _verify_python_venv: |
+    if [[ -n "$CI" ]]; then
+      exit 0
+    fi
     DETECTED_PYTHON_PATH=$(which python)
     if [[ $DETECTED_PYTHON_PATH != *"/envs/"* && $DETECTED_PYTHON_PATH != $PWD/* ]]; then
       echo "Python path (${DETECTED_PYTHON_PATH}) is not scoped to project; please make sure you have activated your virtual environment."
@@ -46,14 +49,20 @@ tasks:
   #============================================================#
   #================= Linting / Testing ========================#
   #============================================================#
-  lint:
-    deps: [_verify_python_venv]
-    cmd: |
-      poetry run ruff check "$PACKAGE_DIR"
-      mypy "$PACKAGE_DIR"
+  lint:ruff:
+    deps: [_verify_python_venv, install]
+    cmd: poetry run ruff check "$PACKAGE_DIR"
+  lint:types:
+    deps: [_verify_python_venv, install]
+    cmd: poetry run mypy "$PACKAGE_DIR"
+  lint:all:
+    deps: [_verify_python_venv, install]
+    cmds:
+      - task: lint:ruff
+      - task: lint:types
   test:
-    deps: [_verify_python_venv]
-    cmd: poetry run pytest -n 4
+    deps: [_verify_python_venv, install]
+    cmd: poetry run pytest -n auto
   #============================================================#
   #================= SECTION_HEADING ==========================#
   #============================================================#

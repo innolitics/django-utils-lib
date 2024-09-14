@@ -1,0 +1,69 @@
+name: CI Checks
+
+on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract project's active Python version
+        id: python-version
+        shell: bash
+        run: echo "python-version=$(cat .tool-versions | grep python | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+        working-directory: .
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ steps.python-version.outputs.python-version }}
+      - uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: 1.7.1
+      - uses: actions/cache@v4
+        name: Configure Python poetry cache
+        with:
+          path: ./.venv
+          key: ${{ runner.os }}-${{ runner.arch }}-poetry-venv-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-poetry-venv-
+      - uses: arduino/setup-task@v2
+      - name: Install dependencies
+        shell: bash
+        run: task install
+      - name: Lint with ruff
+        shell: bash
+        run: task lint:ruff
+      - name: Type check with mypy
+        shell: bash
+        run: task lint:types
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: 1.7.1
+      - uses: actions/cache@v4
+        name: Configure Python poetry cache
+        with:
+          path: ./.venv
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-poetry-venv-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-poetry-venv-
+      - uses: arduino/setup-task@v2
+      - name: Install dependencies
+        shell: bash
+        run: task install
+      - name: Run tests
+        shell: bash
+        run: task test

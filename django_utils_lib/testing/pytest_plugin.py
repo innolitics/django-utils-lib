@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import json
 import os
@@ -7,14 +9,13 @@ from typing import (
     Dict,
     List,
     Literal,
-    NotRequired,
     Optional,
-    TypedDict,
 )
 
 import pytest
 from constants import PACKAGE_NAME
 from filelock import FileLock
+from typing_extensions import NotRequired, TypedDict
 
 from django_utils_lib.logger import build_heading_block, pkg_logger
 from django_utils_lib.testing.utils import PytestNodeID, validate_requirement_tagging
@@ -205,6 +206,9 @@ class CustomPytestPlugin:
 
     @property
     def auto_debug(self) -> bool:
+        # Disable if CI is detected
+        if os.getenv("CI", "").lower() == "true":
+            return False
         return bool(self.get_config_val("auto_debug")) or bool(os.getenv(f"{PACKAGE_NAME}_AUTO_DEBUG", ""))
 
     @property
