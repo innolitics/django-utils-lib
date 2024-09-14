@@ -2,7 +2,16 @@
 
 > A bundle of useful utility functions and helpers for working with Django
 
-## Installing and Using
+
+## Core Features
+
+- Pytest plugin, with commonly needed items
+    - Support for automated debugpy listener
+    - Support for `requirements()` markers
+    - Support for test collection, with CSV export (including with xdist)
+
+
+## Installing and Using (as a library)
 
 TBD
 
@@ -10,6 +19,6 @@ TBD
 
 TBD
 
-## Publishing
+### Publishing
 
 TBD

@@ -20,6 +20,16 @@ pytest-playwright = "^0.5.2"
 filelock = "^3.16.0"
 debugpy = "^1.8.5"
 
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["A", "E", "F", "I", "W"]
+unfixable = ["F841"]
+
+[tool.ruff.format]
+quote-style = "double"
+
 [tool.pytest.ini_options]
 log_level = "INFO"
 log_cli_level = "INFO"
@@ -28,7 +38,7 @@ testpaths = [
     "django_utils_lib/tests"
 ]
 pythonpath = ". django_utils_lib"
-
+auto_debug = true
 
 [build-system]
 requires = ["poetry-core"]
