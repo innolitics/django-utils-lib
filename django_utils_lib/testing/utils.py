@@ -1,15 +1,35 @@
 from __future__ import annotations
 
 import re
-from typing import List, Tuple, cast
+from typing import List, Tuple, Union, cast
 
 import pytest
 from typing_extensions import TypedDict
+from xdist import is_xdist_worker
 
 PytestNodeID = str
 """
 A pytest node ID follows the format of `file_path::test_name`
 """
+
+
+def is_main_pytest_runner(pytest_obj: Union[pytest.Config, pytest.FixtureRequest, pytest.Session]):
+    """
+    Utility function that returns true only if we are in the main runner (not an xdist worker)
+
+    This should work in both xdist and non-xdist modes of operation.
+    """
+    # Pytest config or worker node
+    if isinstance(pytest_obj, pytest.Config) or hasattr(pytest_obj, "workerinput"):
+        # The presence of "workerinput", on either a config or distributed node,
+        # indicates we are on a worker
+        return getattr(pytest_obj, "workerinput", None) is None
+
+    # Pytest session objects or requests
+    if hasattr(pytest_obj, "config"):
+        return is_xdist_worker(pytest_obj) is False
+
+    return False
 
 
 class RequirementValidationResults(TypedDict):

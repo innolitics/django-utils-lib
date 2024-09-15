@@ -62,7 +62,11 @@ tasks:
       - task: lint:types
   test:
     deps: [_verify_python_venv, install]
-    cmd: poetry run pytest -n auto
+    cmd: |
+      # Clear cache files
+      rm -rf $PACKAGE_DIR/testing/.pytest_run_cache
+      # Run pytest
+      poetry run pytest -n auto
   #============================================================#
   #================= SECTION_HEADING ==========================#
   #============================================================#
