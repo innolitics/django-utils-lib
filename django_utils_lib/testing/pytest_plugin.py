@@ -21,10 +21,10 @@ import pytest
 import xdist
 import xdist.dsession
 import xdist.workermanage
-from constants import PACKAGE_NAME
 from filelock import FileLock
 from typing_extensions import NotRequired, TypedDict
 
+from django_utils_lib.constants import PACKAGE_NAME
 from django_utils_lib.logger import build_heading_block, pkg_logger
 from django_utils_lib.testing.utils import PytestNodeID, is_main_pytest_runner, validate_requirement_tagging
 
