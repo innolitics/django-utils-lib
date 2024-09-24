@@ -25,7 +25,8 @@ from filelock import FileLock
 from typing_extensions import NotRequired, TypedDict
 
 from django_utils_lib.constants import PACKAGE_NAME
-from django_utils_lib.logger import build_heading_block, pkg_logger
+from django_utils_lib.logger import pkg_logger
+from django_utils_lib.logging_utils import build_heading_block
 from django_utils_lib.testing.utils import PytestNodeID, is_main_pytest_runner, validate_requirement_tagging
 
 BASE_DIR = Path(__file__).resolve().parent
