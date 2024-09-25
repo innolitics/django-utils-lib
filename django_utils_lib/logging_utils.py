@@ -1,5 +1,5 @@
 from os import get_terminal_size
-from typing import List, Union
+from typing import Any, Dict, List, Literal, TypedDict, Union
 
 
 def build_heading_block(heading: Union[str, List[str]], border_width=2) -> str:
@@ -26,3 +26,40 @@ def build_heading_block(heading: Union[str, List[str]], border_width=2) -> str:
     heading_lines.append(heading_delim)
 
     return "\n".join(heading_lines)
+
+
+LoggingFormatterConfig = TypedDict(
+    "LoggingFormatterConfig",
+    {"class": str, "format": str, "datefmt": str, "style": Literal["%", "{", "$"]},
+    total=False,
+)
+
+LoggingFormatterPreset = Literal["with_line_numbers", "no_line_numbers"]
+LoggingHandlerPreset = Literal["console", "console_no_line_number"]
+
+
+class LoggingPresets:
+    """
+    These presets can be useful for working the Python standard `logging` library, as well as Django's
+    logging configuration, which wraps the standard implementation.
+
+    For more details, see:
+
+    - [Python Docs - logging.config](https://docs.python.org/3/library/logging.config.html)
+    - [Django Docs - Logging](https://docs.djangoproject.com/en/5.1/topics/logging/)
+    """
+
+    formatters: Dict[LoggingFormatterPreset, LoggingFormatterConfig] = {
+        "with_line_numbers": {
+            "format": "[%(name)s] [%(asctime)s] %(levelname)s - [%(filename)s:%(lineno)s] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "no_line_numbers": {
+            "format": "[%(name)s] [%(asctime)s] %(levelname)s - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    }
+    handlers: Dict[LoggingHandlerPreset, Dict[str, Any]] = {
+        "console": {"class": "logging.StreamHandler", "formatter": "with_line_numbers"},
+        "console_no_line_number": {"class": "logging.StreamHandler", "formatter": "no_line_numbers"},
+    }
