@@ -218,10 +218,8 @@ def pytest_addoption(parser: pytest.Parser):
 
 @pytest.hookimpl()
 def pytest_configure(config: pytest.Config):
-    if not is_main_pytest_runner(config):
-        return
-
     # Register markers
+    # Note: This should be done every time (don't wrap in `is_main_pytest_runner` check)
     config.addinivalue_line("markers", "requirements(requirements: List[str]): Attach requirements to test")
 
 
