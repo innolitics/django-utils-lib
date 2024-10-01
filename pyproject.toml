@@ -5,8 +5,12 @@ description = "A utility library for working with Django"
 authors = ["Innolitics"]
 readme = "README.md"
 
+[tool.poetry.scripts]
+dul-cli = "django_utils_lib.cli:app"
+
 [tool.poetry.dependencies]
 python = "^3.9"
+typer = "^0.12.5"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -39,6 +43,7 @@ testpaths = [
 ]
 pythonpath = ". django_utils_lib"
 auto_debug = true
+auto_debug_wait_for_connect = false
 
 [build-system]
 requires = ["poetry-core"]
