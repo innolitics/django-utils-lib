@@ -9,7 +9,9 @@
     - Support for automated debugpy listener
     - Support for `requirements()` markers
     - Support for test collection, with CSV export (including with xdist)
-
+- Logging utils (presets, formatters, etc.)
+- CLI / pre-built commands
+- CLI Utils
 
 ## Installing and Using (as a library)
 
