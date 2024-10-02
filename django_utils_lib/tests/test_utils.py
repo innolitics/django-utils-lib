@@ -1,4 +1,9 @@
+import sys
+from typing import List, TypedDict
+
 import pytest
+
+from django_utils_lib.cli_utils import MonkeyPatchedArgsWithExpandedRepeats
 
 
 def test_requirement_validation(pytester: pytest.Pytester):
@@ -61,3 +66,60 @@ def test_valid_requirements():
     result = pytester.runpytest("valid_requirements.py")
     result.stdout.no_fnmatch_line("*InvalidTestConfigurationError*")
     result.assert_outcomes(passed=1)
+
+
+class MonkeyPatchedArgsWithExpandedRepeatsTestCase(TypedDict):
+    input_args: List[str]
+    args_to_expand: List[str]
+    expected_patched_args: List[str]
+
+
+monkey_patched_args_with_expanded_repeats_test_cases: List[MonkeyPatchedArgsWithExpandedRepeatsTestCase] = [
+    # Fairly simple example
+    {
+        "input_args": ["a", "b", "--author", "Mary Shelley", "Stanisław Lem"],
+        "args_to_expand": ["--author"],
+        "expected_patched_args": ["a", "b", "--author", "Mary Shelley", "--author", "Stanisław Lem"],
+    },
+    # More complicated, multiple items to patch, with non-patching args options between
+    {
+        "input_args": [
+            "a",
+            "--files",
+            "file_a.txt",
+            "file_b.txt",
+            "--no-pager",
+            "-d",
+            "--parsers",
+            "txt",
+            "md",
+            "--debug",
+        ],
+        "args_to_expand": ["--files", "--parsers"],
+        "expected_patched_args": [
+            "a",
+            "--files",
+            "file_a.txt",
+            "--files",
+            "file_b.txt",
+            "--no-pager",
+            "-d",
+            "--parsers",
+            "txt",
+            "--parsers",
+            "md",
+            "--debug",
+        ],
+    },
+]
+
+
+@pytest.mark.parametrize("test_case", monkey_patched_args_with_expanded_repeats_test_cases)
+def test_MonkeyPatchedArgsWithExpandedRepeats(test_case: MonkeyPatchedArgsWithExpandedRepeatsTestCase):
+    """
+    Tests the `MonkeyPatchedArgsWithExpandedRepeats` context manager
+    """
+    sys.argv = test_case["input_args"]
+    with MonkeyPatchedArgsWithExpandedRepeats(args_to_expand=test_case["args_to_expand"]):
+        assert sys.argv == test_case["expected_patched_args"]
+    assert sys.argv == test_case["input_args"]
