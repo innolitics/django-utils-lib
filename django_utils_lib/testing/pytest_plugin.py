@@ -24,7 +24,7 @@ import xdist.workermanage
 from filelock import FileLock
 from typing_extensions import NotRequired, TypedDict
 
-from django_utils_lib.constants import PACKAGE_NAME
+from django_utils_lib.constants import PACKAGE_NAME, PACKAGE_NAME_SNAKE_CASE
 from django_utils_lib.logger import pkg_logger
 from django_utils_lib.logging_utils import build_heading_block
 from django_utils_lib.testing.utils import PytestNodeID, is_main_pytest_runner, validate_requirement_tagging
@@ -51,37 +51,59 @@ class PluginReportingConfiguration(TypedDict):
     """
 
 
+class EnvVarOverride(TypedDict):
+    name: str
+    help: str
+
+
 class PluginConfigurationItem(TypedDict):
     help: str
     default: Any
     type: Literal["string", "paths", "pathlist", "args", "linelist", "bool"]
+    env_var_override: NotRequired[Optional[EnvVarOverride]]
 
 
 PluginConfigKey = Literal[
     "auto_debug",
     "auto_debug_wait_for_connect",
     "mandate_requirement_markers",
-    "reporting.csv_export_path",
-    "reporting.omit_unexecuted_tests",
+    "reporting__csv_export_path",
+    "reporting__omit_unexecuted_tests",
 ]
+
+_AutoDebugEnvVarConfig: EnvVarOverride = {
+    "name": f"{PACKAGE_NAME_SNAKE_CASE}_AUTO_DEBUG",
+    "help": "If set to any truthy value (`bool()`), will enable auto-debugging. Unless `CI` is set to `true`.",
+}
+
+_AutoDebugWaitForConnectEnvVarConfig: EnvVarOverride = {
+    "name": f"{PACKAGE_NAME_SNAKE_CASE}_AUTO_DEBUG_WAIT_FOR_CONNECT",
+    "help": "If set to any truthy value (`bool()`), will enable waiting for debugger client to connect.",
+}
+
+_ReportingCSVExportPathEnvVarConfig: EnvVarOverride = {
+    "name": f"{PACKAGE_NAME_SNAKE_CASE}_REPORTING__CSV_EXPORT_PATH",
+    "help": "If set, will save the test results to a CSV file after session completion",
+}
 
 PluginConfigItems: Dict[PluginConfigKey, PluginConfigurationItem] = {
     "auto_debug": {
         "help": (
             "If true, the debugpy listener will be auto-invoked on the main pytest session."
             "\n"
-            "You can also enable this by setting `{PACKAGE_NAME}_AUTO_DEBUG` as an environment variable."
+            f"You can also enable this by setting `{PACKAGE_NAME_SNAKE_CASE}_AUTO_DEBUG` as an environment variable."
         ),
         "type": "bool",
         "default": False,
+        "env_var_override": _AutoDebugEnvVarConfig,
     },
     "auto_debug_wait_for_connect": {
         "help": (
-            "If true, or if the `auto_debug_wait_for_connect` env var is set, then the auto debug feature"
-            " will wait for the debugger client to connect before starting tests"
+            "If true, then the auto debug feature" " will wait for the debugger client to connect before starting tests"
         ),
         "type": "bool",
         "default": False,
+        "env_var_override": _AutoDebugWaitForConnectEnvVarConfig,
     },
     "mandate_requirement_markers": {
         "help": (
@@ -91,12 +113,13 @@ PluginConfigItems: Dict[PluginConfigKey, PluginConfigurationItem] = {
         "type": "bool",
         "default": False,
     },
-    "reporting.csv_export_path": {
+    "reporting__csv_export_path": {
         "help": "If set, will save the test results to a CSV file after session completion",
         "type": "string",
         "default": None,
+        "env_var_override": _ReportingCSVExportPathEnvVarConfig,
     },
-    "reporting.omit_unexecuted_tests": {
+    "reporting__omit_unexecuted_tests": {
         "help": "If set, will exclude tests that were collected but not executed from the test report CSV",
         "type": "bool",
         "default": False,
@@ -213,7 +236,9 @@ class CollectedTests:
 def pytest_addoption(parser: pytest.Parser):
     # Register all config key-pairs with INI parser
     for config_key, config_item in PluginConfigItems.items():
-        parser.addini(name=config_key, **config_item)
+        parser.addini(
+            name=config_key, help=config_item["help"], default=config_item["default"], type=config_item["type"]
+        )
 
 
 @pytest.hookimpl()
@@ -306,11 +331,13 @@ class CustomPytestPlugin:
         # Disable if CI is detected
         if os.getenv("CI", "").lower() == "true":
             return False
-        return bool(self.get_global_config_val("auto_debug")) or bool(os.getenv(f"{PACKAGE_NAME}_AUTO_DEBUG", ""))
+        return bool(self.get_global_config_val("auto_debug")) or bool(os.getenv(_AutoDebugEnvVarConfig["name"], ""))
 
     @property
     def auto_debug_wait_for_connect(self) -> bool:
-        return bool(self.get_global_config_val("auto_debug_wait_for_connect"))
+        return bool(self.get_global_config_val("auto_debug_wait_for_connect")) or bool(
+            os.getenv(_AutoDebugWaitForConnectEnvVarConfig["name"], "")
+        )
 
     @property
     def mandate_requirement_markers(self) -> bool:
@@ -318,12 +345,14 @@ class CustomPytestPlugin:
 
     @property
     def reporting_config(self) -> Optional[PluginReportingConfiguration]:
-        csv_export_path = self.get_global_config_val("reporting.csv_export_path")
+        csv_export_path = os.getenv(_ReportingCSVExportPathEnvVarConfig["name"]) or self.get_global_config_val(
+            "reporting__csv_export_path"
+        )
         if not isinstance(csv_export_path, str):
             return None
         return {
             "csv_export_path": csv_export_path,
-            "omit_unexecuted_tests": bool(self.get_global_config_val("reporting.omit_unexecuted_tests")),
+            "omit_unexecuted_tests": bool(self.get_global_config_val("reporting__omit_unexecuted_tests")),
         }
 
     @property
@@ -407,7 +436,10 @@ class CustomPytestPlugin:
         if not self.reporting_config:
             return
         collected_test_mappings = self.collected_tests._get_data()
-        with open(self.reporting_config["csv_export_path"], "w") as csv_file:
+        csv_export_path = self.reporting_config["csv_export_path"]
+        # Ensure intermediate dirs
+        pathlib.Path(csv_export_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(csv_export_path, "w") as csv_file:
             # Use keys of first entry, since all entries should have same keys
             fieldnames = collected_test_mappings[next(iter(collected_test_mappings))].keys()
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
