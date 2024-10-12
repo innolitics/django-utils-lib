@@ -68,5 +68,28 @@ tasks:
       # Run pytest
       poetry run pytest -n auto {{.CLI_ARGS}}
   #============================================================#
-  #================= SECTION_HEADING ==========================#
+  #=================      Docs       ==========================#
   #============================================================#
+  docs:pytest_plugin_table:
+    desc: Generates a Markdown table with Pytest plugin config options
+    deps: [_verify_python_venv]
+    cmd: |
+      poetry run python << "EOF"
+      from django_utils_lib.testing.pytest_plugin import PluginConfigItems
+
+      def generate_markdown_table(config_items):
+          table_header = "| Config Key | Type | Default | Help | Env Var? |\n"
+          table_header += "|------------|------|---------|------|---------------|\n"
+          table_rows = []
+          for key, item in config_items.items():
+              env_override = item.get("env_var_override", None)
+              env_override_text = f"`{env_override['name']}`: {env_override['help']}" if env_override else "N/A"
+              help = item['help'].replace("\n", "<br/>")
+              table_rows.append(
+                  f"| `{key}` | `{item['type']}` | `{item['default']}` | {help} | {env_override_text} |"
+              )
+          return table_header + "\n".join(table_rows)
+
+      markdown_table = generate_markdown_table(PluginConfigItems)
+      print(markdown_table)
+      EOF
