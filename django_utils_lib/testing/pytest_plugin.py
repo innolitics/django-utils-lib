@@ -371,7 +371,7 @@ class CustomPytestPlugin:
                 return
 
             DEBUGPY_PORT = int(os.environ.get("DEBUGPY_PORT_PYTEST", 5679))
-            DEBUG_HOST = os.environ.get("DEBUGPY_PORT_PYTEST", "0.0.0.0")
+            DEBUG_HOST = os.environ.get("DEBUGPY_HOST_PYTEST", "0.0.0.0")
             debugpy.listen((DEBUG_HOST, DEBUGPY_PORT))
             self.debugger_listening = True
 
