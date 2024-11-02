@@ -11,6 +11,7 @@ dul-cli = "django_utils_lib.cli:app"
 [tool.poetry.dependencies]
 python = "^3.9"
 typer = "^0.12.5"
+pydantic = "^2.9.2"
 
 
 [tool.poetry.group.dev.dependencies]
