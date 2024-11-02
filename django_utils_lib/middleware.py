@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Final
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -48,7 +48,7 @@ class DevServerRedirectMiddleware(BaseMiddleware):
     Use `DEV_SERVER_ACCEPTED_DEV_SERVER_PORTS` to control, with List[Union[int, str]]
     """
 
-    DJANGO_SETTINGS_KEY = "DEV_SERVER_ACCEPTED_DEV_SERVER_PORTS"
+    DJANGO_SETTINGS_KEY: Final = "DEV_SERVER_ACCEPTED_DEV_SERVER_PORTS"
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         settings_key = DevServerRedirectMiddleware.DJANGO_SETTINGS_KEY

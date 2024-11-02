@@ -164,6 +164,7 @@ cython_debug/
 # Misc.
 *temp.json*
 *.csv
+scratch.py
 
 # VSCode
 .vscode/*.json
