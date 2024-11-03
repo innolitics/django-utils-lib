@@ -1,12 +1,67 @@
 import sys
-from typing import List, TypedDict
+from typing import List, Optional, TypedDict
 
 import pytest
 
 from django_utils_lib.cli_utils import MonkeyPatchedArgsWithExpandedRepeats
 
 
-def test_requirement_validation(pytester: pytest.Pytester):
+class RequirementValidationTestScenario(TypedDict):
+    test_file_src: str
+    expected_pass_count: int
+    expected_err_string: Optional[str]
+
+
+requirement_validation_scenarios: List[RequirementValidationTestScenario] = [
+    # Completely missing requirements
+    {
+        "test_file_src": """
+    def test_missing_requirements():
+        pass
+    """,
+        "expected_pass_count": 0,
+        "expected_err_string": ".*InvalidTestConfigurationError:.*py::test_missing_requirements "
+        "missing `requirements`.*",
+    },
+    # Requirements included, but invalid format
+    {
+        "test_file_src": """
+    import pytest
+    @pytest.mark.requirements("Hello")
+    def test_invalid_requirements():
+        pass
+    """,
+        "expected_pass_count": 0,
+        "expected_err_string": ".*InvalidTestConfigurationError: .*does not match pattern.*",
+    },
+    # Requirements included, but not sorted
+    {
+        "test_file_src": """
+    import pytest
+    @pytest.mark.requirements("REQ-001-002", "REQ-001-001")
+    def test_unsorted_requirements():
+        pass
+    """,
+        "expected_pass_count": 0,
+        "expected_err_string": ".*InvalidTestConfigurationError: .*requirements are not sorted correctly*",
+    },
+    # Successful usage
+    {
+        "test_file_src": """
+import pytest
+
+@pytest.mark.requirements("REQ-004-001", "REQ-005-002")
+def test_valid_requirements():
+    pass
+""",
+        "expected_pass_count": 1,
+        "expected_err_string": None,
+    },
+]
+
+
+@pytest.mark.parametrize("scenario", requirement_validation_scenarios)
+def test_requirement_validation(scenario: RequirementValidationTestScenario, pytester: pytest.Pytester):
     """
     Tests the requirements marker validation functionality of our pytest plugin
     """
@@ -18,54 +73,16 @@ pytest_plugins = ["django_utils_lib.testing.pytest_plugin"]
 [pytest]
 mandate_requirement_markers = True
 """)
-    pytester.makepyfile(
-        missing_requirements="""
-def test_missing_requirements():
-    pass
-""",
-        invalid_requirements="""
-import pytest
 
-@pytest.mark.requirements("Hello")
-def test_invalid_requirements():
-    pass
-""",
-        unsorted_requirements="""
-import pytest
+    pytester.makepyfile(test_requirements_validation=scenario["test_file_src"])
+    result = pytester.runpytest("test_requirements_validation.py")
 
-@pytest.mark.requirements("REQ-001-002", "REQ-001-001")
-def test_unsorted_requirements():
-    pass
-""",
-        valid_requirements="""
-import pytest
+    if scenario["expected_err_string"]:
+        result.stdout.re_match_lines([scenario["expected_err_string"]])
+    else:
+        result.stdout.no_re_match_line(".*InvalidTestConfigurationError.*")
 
-@pytest.mark.requirements("REQ-004-001", "REQ-005-002")
-def test_valid_requirements():
-    pass
-""",
-    )
-
-    # Completely missing requirements
-    result = pytester.runpytest("missing_requirements.py")
-    result.stdout.fnmatch_lines(
-        ["*InvalidTestConfigurationError:*missing_requirements.py::test_missing_requirements missing `requirements`*"]
-    )
-    result.assert_outcomes(passed=0)
-
-    # Requirements included, but invalid format
-    result = pytester.runpytest("invalid_requirements.py")
-    result.stdout.fnmatch_lines(["*InvalidTestConfigurationError: *does not match pattern*"])
-    result.assert_outcomes(passed=0)
-
-    # Requirements included, but not sorted
-    result = pytester.runpytest("unsorted_requirements.py")
-    result.stdout.fnmatch_lines(["*InvalidTestConfigurationError: *requirements are not sorted correctly*"])
-    result.assert_outcomes(passed=0)
-
-    result = pytester.runpytest("valid_requirements.py")
-    result.stdout.no_fnmatch_line("*InvalidTestConfigurationError*")
-    result.assert_outcomes(passed=1)
+    result.assert_outcomes(passed=scenario["expected_pass_count"])
 
 
 class MonkeyPatchedArgsWithExpandedRepeatsTestCase(TypedDict):
