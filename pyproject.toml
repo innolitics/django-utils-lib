@@ -43,6 +43,7 @@ testpaths = [
     "django_utils_lib/tests"
 ]
 pythonpath = ". django_utils_lib"
+django_find_project = false
 auto_debug = true
 auto_debug_wait_for_connect = false
 
