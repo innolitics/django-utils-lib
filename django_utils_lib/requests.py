@@ -3,7 +3,6 @@ from typing import Dict, Final, List, Optional, Union
 
 import pydantic
 from django.conf import settings
-from django.contrib.auth.views import redirect_to_login
 from django.http import (
     FileResponse,
     HttpRequest,
@@ -14,6 +13,8 @@ from django.http import (
 )
 from django.urls import re_path
 from django.views.static import serve
+
+from django_utils_lib.lazy import lazy_django
 
 
 class SimpleStaticFileServerConfig(pydantic.BaseModel):
@@ -76,7 +77,7 @@ class SimpleStaticFileServer:
         # Check for attempted access to an auth-required path from a non-authed user
         if self.config.auth_required_path_patterns and not request.user.is_authenticated:
             if any(pattern.search(url_path) for pattern in self.config.auth_required_path_patterns):
-                return redirect_to_login(next=request.get_full_path())
+                return lazy_django.redirect_to_login(next=request.get_full_path())
 
         # Pass request forward / noop
         return None

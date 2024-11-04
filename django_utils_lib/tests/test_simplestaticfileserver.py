@@ -52,7 +52,10 @@ class StaticFileServerTestCase(TypedDict):
         ),
     ],
 )
-@mock.patch("django_utils_lib.requests.redirect_to_login", return_value=HttpResponseRedirect(""))
+@mock.patch(
+    "django_utils_lib.lazy.LazyDjango.redirect_to_login",
+    new_callable=mock.PropertyMock(return_value=mock.MagicMock(return_value=HttpResponseRedirect(""))),
+)
 @mock.patch("django_utils_lib.requests.serve", return_value=FileResponse())
 def test_path_guarding(
     mock_serve: mock.Mock,
