@@ -83,18 +83,25 @@ class SimpleStaticFileServer:
         return None
 
     def serve_static_path(
-        self, request: HttpRequest, asset_path: Optional[str] = None
+        self, request: HttpRequest, asset_path: str, url_path: Optional[str] = None
     ) -> Union[HttpResponse, FileResponse]:
         """
         This should be close to a drop-in replacement for `serve` (it wraps it),
         with config-based logic for how to handle the request
+
+        Note: The difference between `asset_path` and `url_path` is that `asset_path`
+        is the actual filesystem path (relative to staticfiles root) and `url_path`
+        is what the user sees as the path. They _can_ be different, but don't _have_
+        to be. A good use-case for having them different values is so that you can use
+        something like `/my_page/` as the `url_path`, but `/my_page/index.html` as the
+        `asset_path`.
         """
         if request.method not in ["GET", "HEAD", "OPTIONS"]:
             return HttpResponseNotAllowed(["GET", "HEAD", "OPTIONS"])
-        url_path = asset_path or request.path
+        url_path = url_path or request.path
         if (response := self.guard_path(request, url_path)) is not None:
             return response
-        return serve(request, document_root=str(settings.STATIC_ROOT), path=url_path)
+        return serve(request, document_root=str(settings.STATIC_ROOT), path=asset_path)
 
     def generate_url_patterns(self, ignore_start_strings: Optional[List[str]] = None):
         """
@@ -107,8 +114,10 @@ class SimpleStaticFileServer:
             re_path(rf"^{negate_start_pattern}(?P<asset_path>.*\..*)$", self.serve_static_path),
             # For extension-less paths, try to map to an `index.html`
             re_path(
-                r"^(?P<asset_path>.+/$)",
-                lambda request, asset_path: self.serve_static_path(request, f"{asset_path}/index.html"),
+                r"^(?P<asset_path>[^?#]+).*$",
+                lambda request, asset_path: self.serve_static_path(
+                    request, f"{asset_path.removesuffix('/')}/index.html"
+                ),
             ),
         ]
 

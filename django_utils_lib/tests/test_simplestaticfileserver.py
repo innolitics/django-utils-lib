@@ -91,9 +91,6 @@ def test_path_guarding(
 
         check_response(server.serve_static_path(request=mock_request, asset_path=url_path), expected_response)
 
-        # Based on request alone
-        check_response(server.serve_static_path(request=mock_request), expected_response)
-
 
 @pytest.mark.parametrize(
     "ignore_start_strings, expected_patterns",
@@ -102,14 +99,14 @@ def test_path_guarding(
             None,
             [
                 re.compile(r"^(?!/static/)(?!/media/)(?P<asset_path>.*\..*)$"),
-                re.compile(r"^(?P<asset_path>.+/$)"),
+                re.compile(r"^(?P<asset_path>[^?#]+).*$"),
             ],
         ),
         (
             ["/assets/", "/files/"],
             [
                 re.compile(r"^(?!/assets/)(?!/files/)(?P<asset_path>.*\..*)$"),
-                re.compile(r"^(?P<asset_path>.+/$)"),
+                re.compile(r"^(?P<asset_path>[^?#]+).*$"),
             ],
         ),
     ],
