@@ -1,3 +1,6 @@
+from typing import Callable, Optional
+
+
 class LazyDjango:
     """
     Django has a few modules where if you import something from them,
@@ -8,6 +11,8 @@ class LazyDjango:
     This class is a workaround, without using a full app registration system,
     to just use lazy-imports.
     """
+
+    _redirect_to_login: Optional[Callable] = None
 
     @property
     def redirect_to_login(self):
