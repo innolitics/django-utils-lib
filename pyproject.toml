@@ -24,6 +24,7 @@ pytest-django = "^4.9.0"
 pytest-playwright = "^0.5.2"
 filelock = "^3.16.0"
 debugpy = "^1.8.5"
+django = "*"
 
 [tool.ruff]
 line-length = 120
