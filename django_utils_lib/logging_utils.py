@@ -1,4 +1,4 @@
-from os import get_terminal_size
+from shutil import get_terminal_size
 from typing import Any, Dict, List, Literal, TypedDict, Union
 
 
@@ -11,7 +11,7 @@ def build_heading_block(heading: Union[str, List[str]], border_width=2) -> str:
     ===============
     ```
     """
-    terminal_width = get_terminal_size().columns
+    terminal_width = get_terminal_size(fallback=(80, 24)).columns
     heading_delim = "".ljust(terminal_width, "=")
     heading_lines = [heading_delim]
 
