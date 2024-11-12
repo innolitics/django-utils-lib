@@ -88,15 +88,3 @@ class DevServerRedirectMiddleware(BaseMiddleware):
                 response["Location"] = redirect_url.geturl()
 
         return response
-
-
-class SimpleStaticFileMiddleware(BaseMiddleware):
-    """
-    This is a middleware class to help with serving static files directly with
-    Django.
-
-    For a more robust solution, one should look to using a CDN and/or
-    standalone static file server with a reverse-proxy in place.
-    """
-
-    pass
