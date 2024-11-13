@@ -9,6 +9,7 @@
     - Support for automated debugpy listener
     - Support for `requirements()` markers
     - Support for test collection, with CSV export (including with xdist)
+- An extensible static file serving class / middleware, which has a few bells and whistles in comparison to the default `serve()` method
 - Logging utils (presets, formatters, etc.)
 - CLI / pre-built commands (see [](./django_utils_lib/commands.py))
 - CLI Utils
@@ -16,18 +17,13 @@
 
 ## Installing and Using (as a library)
 
-While this repo is private, you can still install it in various projects by using the git origin as the source.
+While this project is not published on `pypi`, you can still install it in various projects by using the git origin as the source.
 
 For example, [with Poetry](https://python-poetry.org/docs/dependency-specification/#git-dependencies), you can use:
 
 ```bash
 poetry add git+https://github.com/innolitics/django-utils-lib.git#REFERENCE
 ```
-
-> [!WARNING]
-> Under the hood, your package manager needs to be able to authenticate against the git URL that you use. Locally, this should "Just Work", but in CI, you will need to give CI a token to access the repo (even if CI is running inside another `github.com/innolitics` repo).
->
-> For CI purposes, you can use a read-only [GitHub deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys), as an easier alternative to managing PATs or fine-grained access tokens.
 
 ## Pytest plugin
 
@@ -73,4 +69,4 @@ poetry add --editable ${LOCAL_PATH_TO_THIS_DIRECTORY}
 
 ### Publishing
 
-TBD; right now this is only available internally at Innolitics (and/or for our clients), as a private repo.
+TBD; right now this is not published on `pypi`, but is available publicly.
