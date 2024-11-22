@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import re
 from typing import List, Tuple, Union, cast
+from unittest import TestCase
 
 import pytest
+from django.contrib.auth import authenticate
+from django.http import HttpRequest
+from django.test.client import Client as _TestClient
 from typing_extensions import TypedDict
 from xdist import is_xdist_worker
 
@@ -81,3 +85,56 @@ def validate_requirement_tagging(item: pytest.Item) -> RequirementValidationResu
         "errors": errors,
         "validated_requirements": validated_requirements,
     }
+
+
+class TestClient(_TestClient):
+    """
+    A Wrapper around Django's default TestClient to add a few extra features,
+    such as compatibility with `django-axes`
+    """
+
+    # This is so that Pytest doesn't think this is itself a test
+    __test__ = False
+
+    def login(self, client_ip="127.0.0.1", **credentials) -> bool:
+        """
+        This overrides the `login` method from `ClientMixin`, to get it to work with
+        the `django-axes` middleware, which requires a `HttpRequest` object as part of the
+        authentication flow.
+        """
+        request = HttpRequest()
+        request.META = {"REMOTE_ADDR": client_ip}
+        user = authenticate(request=request, **credentials)
+        if user:
+            self._login(user)  # type: ignore[attr-defined]
+            return True
+        return False
+
+
+class TestDataManager(TestCase):
+    '''
+    Wrapper class to help manage test data through the lifecycle of a test
+
+    The normal pattern for using this would be sub-class it, and then expose it
+    as a injected fixture. E.g.:
+
+    ```python
+    class MyTestDataManager(TestDataManager):
+        pass
+
+    @pytest.fixture
+    def test_data(db) -> TestDataManager:
+        """
+        Fixture wrapper around test data manager
+        """
+        return TestDataManager()
+    ```
+    '''
+
+    # Note: This overrides the default of the parent class, to use our
+    # modified TestClient
+    client: TestClient
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.client = TestClient()
