@@ -25,6 +25,8 @@ pytest-playwright = "^0.5.2"
 filelock = "^3.16.0"
 debugpy = "^1.8.5"
 django = "*"
+djangorestframework = "^3.15.2"
+djangorestframework-stubs = {extras = ["compatible-mypy"], version = "^3.15.2"}
 
 [tool.ruff]
 line-length = 120

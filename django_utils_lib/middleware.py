@@ -88,3 +88,21 @@ class DevServerRedirectMiddleware(BaseMiddleware):
                 response["Location"] = redirect_url.geturl()
 
         return response
+
+
+try:
+    from rest_framework.authentication import SessionAuthentication
+    from rest_framework.request import Request as DRFRequest
+
+    class DRFSessionAuthentication401Middleware(SessionAuthentication):
+        """
+        Small shim around DRF's SessionAuthentication, so it returns 401s for
+        unauthorized, instead of 403.
+
+        https://github.com/encode/django-rest-framework/issues/5968
+        """
+
+        def authenticate_header(self, request: DRFRequest):
+            return "Session"
+except ImportError:
+    pass
