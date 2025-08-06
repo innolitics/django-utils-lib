@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import List, Tuple, Union, cast
+from typing import Dict, List, Tuple, Union, cast
 from unittest import TestCase
 
 import pytest
@@ -109,6 +109,15 @@ class TestClient(_TestClient):
             self._login(user)  # type: ignore[attr-defined]
             return True
         return False
+
+    def post_json(self, path: str, data: Dict):
+        return self.post(path, data=data, content_type="application/json")
+
+    def patch_json(self, path: str, data: Dict):
+        return self.patch(path, data=data, content_type="application/json")
+
+    def get_json(self, path: str, *args, **kwargs):
+        return self.get(path, *args, **kwargs).json()
 
 
 class TestDataManager(TestCase):
