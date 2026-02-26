@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
 import typer
 from rich.console import Console
@@ -13,10 +13,10 @@ console = Console()
 
 @app.command()
 def generate_combined_spdx_sbom_json(
-    sbom_paths: List[str],
-    out_path: Path,
-    merged_name="Combined SBOM",
-    merged_namespace="https//localhost",
+    sbom_paths: Annotated[List[str], typer.Argument()],
+    out_path: Annotated[Path, typer.Option("--out")],
+    merged_name: Annotated[str, typer.Option("--merged-name")] = "Combined SBOM",
+    merged_namespace: Annotated[str, typer.Option("--merged-namespace")] = "https://localhost",
 ):
     out_json = generate_combined_spdx_sbom_json_cmd(sbom_paths, merged_name, merged_namespace)
     out_path.write_text(out_json)
