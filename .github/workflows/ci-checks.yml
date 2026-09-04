@@ -45,7 +45,7 @@ jobs:
       - name: Install Python
         shell: bash
         run: uv python install ${{ matrix.python-version }}
-      - uses: arduino/setup-task@v2
+      - uses: go-task/setup-task@v2
       - name: Install dependencies
         shell: bash
         run: task install
