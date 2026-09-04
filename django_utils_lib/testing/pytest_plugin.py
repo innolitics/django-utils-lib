@@ -207,29 +207,61 @@ class CollectedTests:
         self.temp_file_lock_path = f"{self.temp_file_path}.lock"
         self.file_lock = FileLock(self.temp_file_lock_path)
 
+    def _read_unlocked(self) -> CollectedTestsMapping:
+        """
+        Read the backing file. The caller MUST already hold `self.file_lock`.
+        """
+        if not os.path.exists(self.temp_file_path):
+            return {}
+        with open(self.temp_file_path, "r") as f:
+            return json.load(f)
+
+    def _write_unlocked(self, data: CollectedTestsMapping) -> None:
+        """
+        Overwrite the backing file. The caller MUST already hold `self.file_lock`.
+        """
+        with open(self.temp_file_path, "w") as f:
+            json.dump(data, f)
+
     def _get_data(self) -> CollectedTestsMapping:
         with self.file_lock:
-            if not os.path.exists(self.temp_file_path):
-                return {}
-            with open(self.temp_file_path, "r") as f:
-                return json.load(f)
+            return self._read_unlocked()
 
     def __getitem__(self, node_id: PytestNodeID) -> CollectedTestMetadata:
         return self._get_data()[node_id]
 
     def __setitem__(self, node_id: str, item: CollectedTestMetadata):
-        updated_data = self._get_data()
-        updated_data[node_id] = item
+        self.update_many({node_id: item})
+
+    def update_many(self, items: CollectedTestsMapping) -> None:
+        """
+        Register (or replace) several entries in a single locked read-modify-write.
+        """
+        if not items:
+            return
         with self.file_lock:
-            with open(self.temp_file_path, "w") as f:
-                json.dump(updated_data, f)
+            data = self._read_unlocked()
+            for node_id, item in items.items():
+                existing = data.get(node_id)
+                if existing is not None and existing.get("status"):
+                    # Under xdist every process collects the same items, so a process
+                    # may still be registering tests that a faster worker has already
+                    # run and reported. Re-registration must not regress that status.
+                    item = {**item, "status": existing["status"]}
+                data[node_id] = item
+            self._write_unlocked(data)
 
     def update_test_status(self, node_id: PytestNodeID, updated_status: TestStatus):
-        updated_data = self._get_data()
-        updated_data[node_id]["status"] = updated_status
         with self.file_lock:
-            with open(self.temp_file_path, "w") as f:
-                json.dump(updated_data, f)
+            data = self._read_unlocked()
+            entry = data.get(node_id)
+            if entry is None:
+                # Defensive: recording a result is bookkeeping for the report, and must
+                # never be able to take down the worker that ran the test.
+                entry = CollectedTestMetadata(node_id=node_id, doc_string=None, requirements=None, status="")
+                data[node_id] = entry
+            entry["status"] = updated_status
+            self._write_unlocked(data)
 
 
 @pytest.hookimpl()
@@ -400,6 +432,8 @@ class CustomPytestPlugin:
         # We might have multiple errors, both in a single node, as well as across all
         errors: List[str] = []
 
+        collected: CollectedTestsMapping = {}
+
         for item in items:
             requirements: List[str] = []
             if self.mandate_requirement_markers:
@@ -408,12 +442,14 @@ class CustomPytestPlugin:
                 requirements = validation_results["validated_requirements"]
 
             doc_string: str = item.obj.__doc__ or ""  # type: ignore
-            self.collected_tests[item.nodeid] = {
+            collected[item.nodeid] = {
                 "node_id": item.nodeid,
                 "requirements": requirements,
                 "doc_string": doc_string.strip(),
                 "status": "",
             }
+
+        self.collected_tests.update_many(collected)
 
         if errors:
             raise InvalidTestConfigurationError(errors)
