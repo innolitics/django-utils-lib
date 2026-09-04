@@ -27,54 +27,41 @@ tasks:
   #============================================================#
   default: task --list-all
   #============================================================#
-  #==================== Internal Use ==========================#
-  #============================================================#
-  _verify_python_venv: |
-    if [[ -n "$CI" ]]; then
-      exit 0
-    fi
-    DETECTED_PYTHON_PATH=$(which python)
-    if [[ $DETECTED_PYTHON_PATH != *"/envs/"* && $DETECTED_PYTHON_PATH != $PWD/* ]]; then
-      echo "Python path (${DETECTED_PYTHON_PATH}) is not scoped to project; please make sure you have activated your virtual environment."
-      exit 1
-    fi
-  #============================================================#
   #================= Setup / install ==========================#
   #============================================================#
   install:
-    deps: [_verify_python_venv]
     sources:
       - pyproject.toml
-    cmd: poetry install
+      - uv.lock
+    cmd: uv sync
   #============================================================#
   #================= Linting / Testing ========================#
   #============================================================#
   lint:ruff:
-    deps: [_verify_python_venv, install]
-    cmd: poetry run ruff check "$PACKAGE_DIR"
+    deps: [install]
+    cmd: uv run ruff check "$PACKAGE_DIR"
   lint:types:
-    deps: [_verify_python_venv, install]
-    cmd: poetry run mypy "$PACKAGE_DIR"
+    deps: [install]
+    cmd: uv run mypy "$PACKAGE_DIR"
   lint:all:
-    deps: [_verify_python_venv, install]
+    deps: [install]
     cmds:
       - task: lint:ruff
       - task: lint:types
   test:
-    deps: [_verify_python_venv, install]
+    deps: [install]
     cmd: |
       # Clear cache files
       rm -rf $PACKAGE_DIR/testing/.pytest_run_cache
       # Run pytest
-      poetry run pytest -n auto {{.CLI_ARGS}}
+      uv run pytest -n auto {{.CLI_ARGS}}
   #============================================================#
   #=================      Docs       ==========================#
   #============================================================#
   docs:pytest_plugin_table:
     desc: Generates a Markdown table with Pytest plugin config options
-    deps: [_verify_python_venv]
     cmd: |
-      poetry run python << "EOF"
+      uv run python << "EOF"
       from django_utils_lib.testing.pytest_plugin import PluginConfigItems
 
       def generate_markdown_table(config_items):

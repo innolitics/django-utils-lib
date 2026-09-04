@@ -19,10 +19,10 @@
 
 While this project is not published on `pypi`, you can still install it in various projects by using the git origin as the source.
 
-For example, [with Poetry](https://python-poetry.org/docs/dependency-specification/#git-dependencies), you can use:
+For example, [with uv](https://docs.astral.sh/uv/concepts/projects/dependencies/#git), you can use:
 
 ```bash
-poetry add git+https://github.com/innolitics/django-utils-lib.git#REFERENCE
+uv add git+https://github.com/innolitics/django-utils-lib.git --rev REFERENCE
 ```
 
 ## Pytest plugin
@@ -53,7 +53,9 @@ pytest_plugins = ["django_utils_lib.testing.pytest_plugin"]
 
 ## Development
 
-This project uses [`task` (aka `go-task`)](https://github.com/go-task/task) for developer task management and execution. [The `Taskfile.yml` file](./Taskfile.yml) serves as a way to organize these commands, as well as a form of documentation and easy entrypoint into getting started with the project.
+This project uses [`uv`](https://docs.astral.sh/uv/) for dependency and virtual environment management. After [installing `uv`](https://docs.astral.sh/uv/getting-started/installation/), `uv sync` (or `task install`) will create the project's `.venv` and install all dependencies from `uv.lock`. There is no need to manually activate the virtual environment - prefix commands with `uv run` instead.
+
+This project also uses [`task` (aka `go-task`)](https://github.com/go-task/task) for developer task management and execution. [The `Taskfile.yml` file](./Taskfile.yml) serves as a way to organize these commands, as well as a form of documentation and easy entrypoint into getting started with the project.
 
 You can use `task --list-all` to see all available `task` commands.
 
@@ -61,10 +63,10 @@ You can use `task --list-all` to see all available `task` commands.
 
 If you want to install a local development version of this library, in a different directory / project, you should be able to use the local path of the library in most standard Python package managers.
 
-For example, this can be accomplished with Poetry with the following:
+For example, this can be accomplished with uv with the following:
 
 ```bash
-poetry add --editable ${LOCAL_PATH_TO_THIS_DIRECTORY}
+uv add --editable ${LOCAL_PATH_TO_THIS_DIRECTORY}
 ```
 
 ### Publishing

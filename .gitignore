@@ -169,3 +169,6 @@ scratch.py
 # VSCode
 .vscode/*.json
 !.vscode/*.sample.json
+
+# go-task fingerprint cache
+.task/

@@ -11,24 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract project's active Python version
-        id: python-version
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python
         shell: bash
-        run: echo "python-version=$(cat .tool-versions | grep python | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
-        working-directory: .
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ steps.python-version.outputs.python-version }}
-      - uses: abatilo/actions-poetry@v3
-        with:
-          poetry-version: 1.7.1
-      - uses: actions/cache@v4
-        name: Configure Python poetry cache
-        with:
-          path: ./.venv
-          key: ${{ runner.os }}-${{ runner.arch }}-poetry-venv-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-poetry-venv-
+        run: uv python install
       - uses: arduino/setup-task@v2
       - name: Install dependencies
         shell: bash
@@ -44,22 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - uses: abatilo/actions-poetry@v3
-        with:
-          poetry-version: 1.7.1
-      - uses: actions/cache@v4
-        name: Configure Python poetry cache
-        with:
-          path: ./.venv
-          key: ${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-poetry-venv-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-poetry-venv-
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python
+        shell: bash
+        run: uv python install ${{ matrix.python-version }}
       - uses: arduino/setup-task@v2
       - name: Install dependencies
         shell: bash
